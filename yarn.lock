@@ -2453,6 +2453,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/history@npm:^4.7.11":
+  version: 4.7.11
+  resolution: "@types/history@npm:4.7.11"
+  checksum: 10/1da529a3485f3015daf794effa3185493bf7dd2551c26932389c614f5a0aab76ab97645897d1eef9c74ead216a3848fcaa019f165bbd6e4b71da6eff164b4c68
+  languageName: node
+  linkType: hard
+
 "@types/http-cache-semantics@npm:^4.0.2":
   version: 4.0.4
   resolution: "@types/http-cache-semantics@npm:4.0.4"
@@ -2571,6 +2578,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^22.13.14":
+  version: 22.13.14
+  resolution: "@types/node@npm:22.13.14"
+  dependencies:
+    undici-types: "npm:~6.20.0"
+  checksum: 10/5fafad441c7bb27f963aa8fdfa0787ffb1142b27f4dd2047a2cc27a39f981b432acc71a9b5a428a258f93daeb72f12b7468ab9163a41fe4f98584bc5d42ade6e
+  languageName: node
+  linkType: hard
+
 "@types/normalize-package-data@npm:^2.4.1":
   version: 2.4.4
   resolution: "@types/normalize-package-data@npm:2.4.4"
@@ -2622,6 +2638,36 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-dom@npm:^19.0.4":
+  version: 19.0.4
+  resolution: "@types/react-dom@npm:19.0.4"
+  peerDependencies:
+    "@types/react": ^19.0.0
+  checksum: 10/f15d470242f0b7cca57dd7e991a2852525ac93b2cb92f7e6c104d7bd6a978c3b1d0ba9b8698f23bc19c16b5cd98a6d160007be52c61196952f57cf019f204254
+  languageName: node
+  linkType: hard
+
+"@types/react-router-dom@npm:^5.3.3":
+  version: 5.3.3
+  resolution: "@types/react-router-dom@npm:5.3.3"
+  dependencies:
+    "@types/history": "npm:^4.7.11"
+    "@types/react": "npm:*"
+    "@types/react-router": "npm:*"
+  checksum: 10/28c4ea48909803c414bf5a08502acbb8ba414669b4b43bb51297c05fe5addc4df0b8fd00e0a9d1e3535ec4073ef38aaafac2c4a2b95b787167d113bc059beff3
+  languageName: node
+  linkType: hard
+
+"@types/react-router@npm:*":
+  version: 5.1.20
+  resolution: "@types/react-router@npm:5.1.20"
+  dependencies:
+    "@types/history": "npm:^4.7.11"
+    "@types/react": "npm:*"
+  checksum: 10/72d78d2f4a4752ec40940066b73d7758a0824c4d0cbeb380ae24c8b1cdacc21a6fc835a99d6849b5b295517a3df5466fc28be038f1040bd870f8e39e5ded43a4
+  languageName: node
+  linkType: hard
+
 "@types/react-transition-group@npm:^4.4.10":
   version: 4.4.10
   resolution: "@types/react-transition-group@npm:4.4.10"
@@ -2639,6 +2685,15 @@ __metadata:
     "@types/scheduler": "npm:*"
     csstype: "npm:^3.0.2"
   checksum: 10/bf8fe19e73575489e63c0726355f164157cd69e75f2a862436ad2c0586e732cb953a7255a6bc73145e8f9506ee7a723f9a569ca9a39c53984e5b12b84e1c718a
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^19.0.12":
+  version: 19.0.12
+  resolution: "@types/react@npm:19.0.12"
+  dependencies:
+    csstype: "npm:^3.0.2"
+  checksum: 10/2476295f27371ea67f0ba3ca8fae3c683fc8d086b8b387e0519e67ff5731072c6ff0372fbd5a4c6d760895b1e7dc8997ac518f07bf6b6a8d1e40aeb5d2068b9e
   languageName: node
   linkType: hard
 
@@ -8847,6 +8902,10 @@ __metadata:
     "@emotion/babel-plugin": "npm:^11.11.0"
     "@emotion/eslint-plugin": "npm:^11.11.0"
     "@types/eslint": "npm:^8.56.2"
+    "@types/node": "npm:^22.13.14"
+    "@types/react": "npm:^19.0.12"
+    "@types/react-dom": "npm:^19.0.4"
+    "@types/react-router-dom": "npm:^5.3.3"
     "@typescript-eslint/eslint-plugin": "npm:^7.0.1"
     "@typescript-eslint/parser": "npm:^7.0.1"
     eslint: "npm:^8.56.0"
@@ -9860,6 +9919,13 @@ __metadata:
   version: 5.26.5
   resolution: "undici-types@npm:5.26.5"
   checksum: 10/0097779d94bc0fd26f0418b3a05472410408877279141ded2bd449167be1aed7ea5b76f756562cb3586a07f251b90799bab22d9019ceba49c037c76445f7cddd
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~6.20.0":
+  version: 6.20.0
+  resolution: "undici-types@npm:6.20.0"
+  checksum: 10/583ac7bbf4ff69931d3985f4762cde2690bb607844c16a5e2fbb92ed312fe4fa1b365e953032d469fa28ba8b224e88a595f0b10a449332f83fa77c695e567dbe
   languageName: node
   linkType: hard
 
