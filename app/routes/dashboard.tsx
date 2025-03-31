@@ -45,6 +45,15 @@ export const Component = function Dashboard(): JSX.Element {
             <Button component={Link} to="/contact" size="lg" variant="outlined">
               문의하기
             </Button>
+            <Button
+              component={Link}
+              to="/simple-payment"
+              size="lg"
+              color="success"
+              variant="solid"
+            >
+              결제하기
+            </Button>
           </Stack>
         </Box>
       </Container>

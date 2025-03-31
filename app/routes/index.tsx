@@ -36,6 +36,10 @@ export const router = createBrowserRouter([
       { path: "board", lazy: () => import("./board") },
       { path: "tasks", lazy: () => import("./tasks") },
       { path: "messages", lazy: () => import("./messages") },
+      { path: "payment", lazy: () => import("./payment") },
+      { path: "payment/complete", lazy: () => import("./payment/complete") },
+      { path: "simple-payment", lazy: () => import("./simple-payment") },
+      { path: "payment/simple-complete", lazy: () => import("./payment/simple-complete") },
     ],
   },
 ]);

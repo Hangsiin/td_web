@@ -36,6 +36,7 @@ export const Navigation = memo(function Navigation(
       <NavItem path="/services" label="서비스" icon={<BusinessCenter />} />
       <NavItem path="/board" label="게시판" icon={<Forum />} />
       <NavItem path="/contact" label="문의하기" icon={<ContactPage />} />
+      <NavItem path="/simple-payment" label="결제하기" icon={<BusinessCenter />} />
       <NavItem
         path="/tasks"
         label="Tasks"
