@@ -5,6 +5,9 @@ import {
   AssignmentTurnedInRounded,
   ChatRounded,
   Dashboard,
+  BusinessCenter,
+  ContactPage,
+  Forum,
 } from "@mui/icons-material";
 import {
   List,
@@ -29,7 +32,10 @@ export const Navigation = memo(function Navigation(
       role="navigation"
       {...other}
     >
-      <NavItem path="/dashboard" label="Dashboard" icon={<Dashboard />} />
+      <NavItem path="/dashboard" label="홈" icon={<Dashboard />} />
+      <NavItem path="/services" label="서비스" icon={<BusinessCenter />} />
+      <NavItem path="/board" label="게시판" icon={<Forum />} />
+      <NavItem path="/contact" label="문의하기" icon={<ContactPage />} />
       <NavItem
         path="/tasks"
         label="Tasks"
