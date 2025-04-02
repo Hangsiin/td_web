@@ -18,8 +18,6 @@ import {
   Timestamp,
   increment,
   DocumentSnapshot,
-  DocumentData,
-  Query,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "firebase/auth";
@@ -103,57 +101,57 @@ export const boardService = {
         );
       }
 
+      // Apply search filter if provided
+      // searchTerm 사용하지 않는 변수 주석 처리
+      // if (searchTerm) {
+      //   // Firestore doesn't support text search natively
+      //   // This is a workaround that filters results client-side
+      //   // Not recommended for large datasets
+      // }
+
       // Apply pagination
       if (startAfterDoc) {
-        q = query(q, startAfter(startAfterDoc));
+        q = query(q, startAfter(startAfterDoc), limit(limitCount));
+      } else {
+        q = query(q, limit(limitCount));
       }
 
-      // Apply limit
-      q = query(q, limit(limitCount + 1)); // Get one extra to check if there are more
+      const querySnapshot = await getDocs(q);
+      const posts: Post[] = [];
+      let lastVisible = null;
 
-      // Execute query
-      try {
-        const querySnapshot = await getDocs(q);
-        const posts: Post[] = [];
-        let lastVisible: DocumentSnapshot | null = null;
-        let hasMore = false;
+      if (!querySnapshot.empty) {
+        querySnapshot.forEach((doc) => {
+          const postData = doc.data();
+          posts.push({
+            id: doc.id,
+            ...postData,
+          } as Post);
+        });
 
-        if (!querySnapshot.empty) {
-          // Check if there are more posts
-          if (querySnapshot.docs.length > limitCount) {
-            hasMore = true;
-            querySnapshot.docs.pop(); // Remove the extra document
-          }
-
-          // Get the last visible document for pagination
-          lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-
-          // Convert documents to posts
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            posts.push({
-              id: doc.id,
-              title: data.title,
-              content: data.content,
-              authorId: data.authorId,
-              authorName: data.authorName,
-              authorPhotoURL: data.authorPhotoURL,
-              category: data.category,
-              createdAt: data.createdAt,
-              updatedAt: data.updatedAt,
-              commentCount: data.commentCount || 0,
-            } as Post);
-          });
-        }
-
-        return { posts, lastVisible, hasMore };
-      } catch (error) {
-        console.error("Error getting posts:", error);
-        return { posts: [], lastVisible: null, hasMore: false };
+        lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
       }
+
+      // Check if there are more posts
+      let hasMore = false;
+      if (lastVisible) {
+        const nextQuery = query(q, startAfter(lastVisible), limit(1));
+        const nextSnapshot = await getDocs(nextQuery);
+        hasMore = !nextSnapshot.empty;
+      }
+
+      return {
+        posts,
+        lastVisible,
+        hasMore,
+      };
     } catch (error) {
       console.error("Error getting posts:", error);
-      return { posts: [], lastVisible: null, hasMore: false };
+      return {
+        posts: [],
+        lastVisible: null,
+        hasMore: false,
+      };
     }
   },
 
@@ -174,11 +172,11 @@ export const boardService = {
           ...postSnap.data(),
         } as Post;
       } else {
-        throw new Error("Post not found");
+        return null;
       }
     } catch (error) {
       console.error("Error getting post:", error);
-      throw error;
+      return null;
     }
   },
 
@@ -190,74 +188,46 @@ export const boardService = {
     >,
     user: User,
   ) {
-    if (!user || !user.uid) {
-      console.error("Error creating post: User is not authenticated");
-      throw new Error("사용자 인증이 필요합니다. 다시 로그인해주세요.");
-    }
-
-    // 데이터 유효성 검사
-    if (!post.title || !post.content) {
-      console.error("Error creating post: Missing required fields");
-      throw new Error("제목과 내용은 필수 입력 항목입니다.");
-    }
-
     try {
-      console.log("Creating post with data:", {
-        ...post,
-        authorId: user.uid,
-        authorName: user.displayName || "Anonymous",
-      });
+      // Validate user
+      if (!user || !user.uid) {
+        throw new Error("User not authenticated");
+      }
 
-      const newPost = {
+      // Validate post data
+      if (!post.title || !post.content) {
+        throw new Error("Post title and content are required");
+      }
+
+      // Create post with additional metadata
+      const postData = {
         ...post,
         authorId: user.uid,
-        authorName: user.displayName || "Anonymous",
-        authorPhotoURL: user.photoURL || undefined,
+        authorName: user.displayName || "익명 사용자",
+        authorPhotoURL: user.photoURL || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         views: 0,
         commentCount: 0,
       };
 
-      // 서버 타임스탬프 대신 클라이언트 타임스탬프 사용 (에뮬레이터 문제 해결용)
-      if (import.meta.env.DEV) {
-        const now = Timestamp.now();
-        newPost.createdAt = now;
-        newPost.updatedAt = now;
-      }
+      // Add to Firestore
+      const docRef = await addDoc(this.postsCollection, postData);
 
-      const docRef = await addDoc(this.postsCollection, newPost);
-      console.log("Post created successfully with ID:", docRef.id);
-      return docRef.id;
-    } catch (error: any) {
+      return {
+        id: docRef.id,
+        ...postData,
+      };
+    } catch (error) {
       console.error("Error creating post:", error);
-
-      // 오류 세부 정보 로깅
-      if (error.code) {
-        console.error(`Firebase error code: ${error.code}`);
-      }
-      if (error.message) {
-        console.error(`Error message: ${error.message}`);
-      }
-
-      // 사용자 친화적인 오류 메시지 반환
-      if (error.code === "permission-denied") {
-        throw new Error("권한이 없습니다. 로그인 상태를 확인해주세요.");
-      } else if (error.code === "unavailable") {
-        throw new Error(
-          "Firebase 서비스에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.",
-        );
-      } else {
-        throw new Error(
-          "게시글을 저장하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-        );
-      }
+      throw error;
     }
   },
 
   // Update a post
   async updatePost(postId: string, postData: Partial<Post>, userId: string) {
     try {
+      // Get the post
       const postRef = doc(this.postsCollection, postId);
       const postSnap = await getDoc(postRef);
 
@@ -267,17 +237,18 @@ export const boardService = {
 
       const post = postSnap.data() as Post;
 
-      // Check if the user is the author of the post
+      // Check if user is the author
       if (post.authorId !== userId) {
-        throw new Error("Unauthorized: You are not the author of this post");
+        throw new Error("You don't have permission to edit this post");
       }
 
+      // Update the post
       await updateDoc(postRef, {
         ...postData,
         updatedAt: serverTimestamp(),
       });
 
-      return postId;
+      return true;
     } catch (error) {
       console.error("Error updating post:", error);
       throw error;
@@ -287,6 +258,7 @@ export const boardService = {
   // Delete a post
   async deletePost(postId: string, userId: string) {
     try {
+      // Get the post
       const postRef = doc(this.postsCollection, postId);
       const postSnap = await getDoc(postRef);
 
@@ -296,9 +268,9 @@ export const boardService = {
 
       const post = postSnap.data() as Post;
 
-      // Check if the user is the author of the post
+      // Check if user is the author
       if (post.authorId !== userId) {
-        throw new Error("Unauthorized: You are not the author of this post");
+        throw new Error("You don't have permission to delete this post");
       }
 
       // Delete all comments for this post
@@ -309,8 +281,8 @@ export const boardService = {
 
       const commentsSnapshot = await getDocs(commentsQuery);
 
-      const deleteCommentPromises = commentsSnapshot.docs.map((doc) =>
-        deleteDoc(doc.ref),
+      const deleteCommentPromises = commentsSnapshot.docs.map((commentDoc) =>
+        deleteDoc(doc(this.commentsCollection, commentDoc.id)),
       );
 
       await Promise.all(deleteCommentPromises);
@@ -318,7 +290,7 @@ export const boardService = {
       // Delete the post
       await deleteDoc(postRef);
 
-      return postId;
+      return true;
     } catch (error) {
       console.error("Error deleting post:", error);
       throw error;
@@ -328,24 +300,26 @@ export const boardService = {
   // Get comments for a post
   async getComments(postId: string) {
     try {
-      const commentsQuery = query(
+      const q = query(
         this.commentsCollection,
         where("postId", "==", postId),
         orderBy("createdAt", "asc"),
       );
 
-      const querySnapshot = await getDocs(commentsQuery);
+      const querySnapshot = await getDocs(q);
+      const comments: Comment[] = [];
 
-      return querySnapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          }) as Comment,
-      );
+      querySnapshot.forEach((doc) => {
+        comments.push({
+          id: doc.id,
+          ...doc.data(),
+        } as Comment);
+      });
+
+      return comments;
     } catch (error) {
       console.error("Error getting comments:", error);
-      throw error;
+      return [];
     }
   },
 
@@ -355,31 +329,36 @@ export const boardService = {
     user: User,
   ) {
     try {
-      // Check if the post exists
-      const postRef = doc(this.postsCollection, comment.postId);
-      const postSnap = await getDoc(postRef);
-
-      if (!postSnap.exists()) {
-        throw new Error("Post not found");
+      // Validate user
+      if (!user || !user.uid) {
+        throw new Error("User not authenticated");
       }
 
-      const newComment = {
+      // Validate comment data
+      if (!comment.content || !comment.postId) {
+        throw new Error("Comment content and post ID are required");
+      }
+
+      // Create comment with additional metadata
+      const commentData = {
         ...comment,
-        authorId: user.uid,
-        authorName: user.displayName || "Anonymous",
-        authorPhotoURL: user.photoURL || undefined,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      const docRef = await addDoc(this.commentsCollection, newComment);
+      // Add to Firestore
+      const docRef = await addDoc(this.commentsCollection, commentData);
 
-      // Increment comment count on the post
+      // Update comment count on the post
+      const postRef = doc(this.postsCollection, comment.postId);
       await updateDoc(postRef, {
         commentCount: increment(1),
       });
 
-      return docRef.id;
+      return {
+        id: docRef.id,
+        ...commentData,
+      };
     } catch (error) {
       console.error("Error creating comment:", error);
       throw error;
@@ -393,6 +372,7 @@ export const boardService = {
     userId: string,
   ) {
     try {
+      // Get the comment
       const commentRef = doc(this.commentsCollection, commentId);
       const commentSnap = await getDoc(commentRef);
 
@@ -402,17 +382,18 @@ export const boardService = {
 
       const comment = commentSnap.data() as Comment;
 
-      // Check if the user is the author of the comment
+      // Check if user is the author
       if (comment.authorId !== userId) {
-        throw new Error("Unauthorized: You are not the author of this comment");
+        throw new Error("You don't have permission to edit this comment");
       }
 
+      // Update the comment
       await updateDoc(commentRef, {
         ...commentData,
         updatedAt: serverTimestamp(),
       });
 
-      return commentId;
+      return true;
     } catch (error) {
       console.error("Error updating comment:", error);
       throw error;
@@ -422,6 +403,7 @@ export const boardService = {
   // Delete a comment
   async deleteComment(commentId: string, userId: string) {
     try {
+      // Get the comment
       const commentRef = doc(this.commentsCollection, commentId);
       const commentSnap = await getDoc(commentRef);
 
@@ -431,21 +413,21 @@ export const boardService = {
 
       const comment = commentSnap.data() as Comment;
 
-      // Check if the user is the author of the comment
+      // Check if user is the author
       if (comment.authorId !== userId) {
-        throw new Error("Unauthorized: You are not the author of this comment");
+        throw new Error("You don't have permission to delete this comment");
       }
 
-      // Decrement comment count on the post
+      // Delete the comment
+      await deleteDoc(commentRef);
+
+      // Update comment count on the post
       const postRef = doc(this.postsCollection, comment.postId);
       await updateDoc(postRef, {
         commentCount: increment(-1),
       });
 
-      // Delete the comment
-      await deleteDoc(commentRef);
-
-      return commentId;
+      return true;
     } catch (error) {
       console.error("Error deleting comment:", error);
       throw error;

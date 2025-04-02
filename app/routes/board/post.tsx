@@ -10,19 +10,20 @@ import {
   Container,
   Divider,
   FormControl,
+  FormLabel,
   IconButton,
   Stack,
   Textarea,
   Typography,
 } from "@mui/joy";
 import { CircularProgress } from "@mui/material";
-import { useSnackbar } from "notistack";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCurrentUser } from "../../core/auth";
-import { Comment, Post, boardService } from "../../core/board";
 import { usePageEffect } from "../../core/page";
+import { boardService, Post, Comment } from "../../core/board";
 import { formatDate } from "../../utils/dateUtils";
+import { useSnackbar } from "notistack";
 
 // 커스텀 아바타 컴포넌트
 function CustomAvatar({
@@ -32,36 +33,75 @@ function CustomAvatar({
 }: {
   src?: string;
   alt?: string;
-  sx?: any;
+  sx?: Record<string, unknown>;
 }) {
-  const defaultStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: "50%",
-    backgroundColor: "#bdbdbd",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "white",
-    fontSize: "1rem",
-    fontWeight: 500,
-    ...sx,
+  const initials = alt
+    ? alt
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  const colorFromName = (name?: string): string => {
+    if (!name) return "#9c27b0";
+    const colors = [
+      "#f44336",
+      "#e91e63",
+      "#9c27b0",
+      "#673ab7",
+      "#3f51b5",
+      "#2196f3",
+      "#03a9f4",
+      "#00bcd4",
+      "#009688",
+      "#4caf50",
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    hash = Math.abs(hash);
+    return colors[hash % colors.length];
   };
 
-  if (src) {
-    return <img src={src} alt={alt || "avatar"} style={defaultStyle} />;
-  }
-
-  // 이니셜 표시
-  const initial = alt ? alt.charAt(0).toUpperCase() : "U";
-
-  return <div style={defaultStyle}>{initial}</div>;
+  return (
+    <div
+      style={{
+        width:
+          typeof sx?.width === "number" || typeof sx?.width === "string"
+            ? sx.width
+            : 40,
+        height:
+          typeof sx?.height === "number" || typeof sx?.height === "string"
+            ? sx.height
+            : 40,
+        borderRadius: "50%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: src ? "transparent" : colorFromName(alt),
+        overflow: "hidden",
+        ...sx,
+      }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt || "User avatar"}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <span style={{ color: "#fff", fontWeight: "bold" }}>{initials}</span>
+      )}
+    </div>
+  );
 }
 
 export const Component = function PostDetail(): JSX.Element {
-  usePageEffect({ title: "TopdownAI - 게시글 상세" });
+  usePageEffect({ title: "TopdownAI - 게시글" });
 
-  const { id = "" } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
@@ -72,7 +112,6 @@ export const Component = function PostDetail(): JSX.Element {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
-  // Load post and comments
   useEffect(() => {
     const loadPostAndComments = async () => {
       if (!id) {
@@ -84,7 +123,6 @@ export const Component = function PostDetail(): JSX.Element {
       }
 
       try {
-        setIsLoading(true);
         const fetchedPost = await boardService.getPostById(id);
         if (!fetchedPost) {
           enqueueSnackbar("게시글을 찾을 수 없습니다.", {
@@ -120,7 +158,7 @@ export const Component = function PostDetail(): JSX.Element {
         throw new Error("User not authenticated");
       }
 
-      await boardService.deletePost(id, user.uid);
+      await boardService.deletePost(id!, user.uid);
       enqueueSnackbar("게시글이 삭제되었습니다.", {
         variant: "success",
       });
@@ -143,7 +181,7 @@ export const Component = function PostDetail(): JSX.Element {
     try {
       // Make sure we have all required fields for the comment
       const commentData: Omit<Comment, "id" | "createdAt" | "updatedAt"> = {
-        postId: id,
+        postId: id!,
         content: commentText,
         authorId: user.uid,
         authorName: user.displayName ?? "익명 사용자",
@@ -153,7 +191,7 @@ export const Component = function PostDetail(): JSX.Element {
       await boardService.createComment(commentData, user);
 
       // Refresh comments
-      const updatedComments = await boardService.getComments(id);
+      const updatedComments = await boardService.getComments(id!);
       setComments(updatedComments);
       setCommentText("");
       enqueueSnackbar("댓글이 등록되었습니다.", {
@@ -180,7 +218,7 @@ export const Component = function PostDetail(): JSX.Element {
       await boardService.deleteComment(commentId, user.uid);
 
       // Refresh comments
-      const updatedComments = await boardService.getComments(id);
+      const updatedComments = await boardService.getComments(id!);
       setComments(updatedComments);
 
       enqueueSnackbar("댓글이 삭제되었습니다.", {
@@ -294,143 +332,127 @@ export const Component = function PostDetail(): JSX.Element {
               <Typography level="body1">
                 {formatDate(post.createdAt)}
               </Typography>
-              <Typography level="body1">조회수: {post.views}</Typography>
-              <Typography level="body1" color="primary">
-                {post.category}
-              </Typography>
+              <Typography level="body1">조회 {post.views}</Typography>
+              <Typography level="body1">댓글 {post.commentCount}</Typography>
+              <Typography level="body1">카테고리: {post.category}</Typography>
             </Box>
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography level="body1" sx={{ mb: 2 }}>
+            <Typography
+              sx={{
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                fontFamily: "monospace",
+                mb: 3,
+              }}
+            >
               {post.content}
             </Typography>
+          </CardContent>
+        </Card>
 
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}
-            >
-              <Typography level="body1" color="neutral">
-                카테고리: {post.category}
-              </Typography>
-              <Typography level="body1" color="neutral">
-                조회수: {post.views}
-              </Typography>
-              <Typography level="body1" color="neutral">
-                작성일: {formatDate(post.createdAt)}
-              </Typography>
-              <Typography level="body1" color="neutral">
-                수정일: {formatDate(post.updatedAt)}
-              </Typography>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography level="body1" sx={{ mb: 2 }}>
+        {/* 댓글 섹션 */}
+        <Card variant="outlined" sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography level="h4" sx={{ mb: 2 }}>
               댓글 ({comments.length})
             </Typography>
 
             {comments.length > 0 ? (
-              <Stack spacing={2} sx={{ mb: 3 }}>
-                {comments.map((comment) => (
-                  <Card key={comment.id} variant="soft" sx={{ p: 2 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 1,
-                      }}
-                    >
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              comments.map((comment) => (
+                <Box
+                  key={comment.id}
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <CustomAvatar
+                        src={comment.authorPhotoURL}
+                        alt={comment.authorName}
+                        sx={{ width: 24, height: 24 }}
+                      />
+                      <Typography level="body1" fontWeight="bold">
+                        {comment.authorName}
+                      </Typography>
+                      <Typography
+                        level="body2"
+                        sx={{ color: "text.secondary" }}
                       >
-                        <CustomAvatar
-                          src={comment.authorPhotoURL}
-                          alt={comment.authorName}
-                          sx={{ width: 24, height: 24 }}
-                        />
-                        <Typography level="body1" fontWeight="bold">
-                          {comment.authorName}
-                        </Typography>
-                        <Typography level="body2" color="neutral">
-                          {formatDate(comment.createdAt)}
-                        </Typography>
-                      </Box>
-                      {user && comment.authorId === user.uid && (
-                        <IconButton
-                          size="sm"
-                          variant="plain"
-                          color="danger"
-                          onClick={() => handleDeleteComment(comment.id)}
-                        >
-                          🗑️
-                        </IconButton>
-                      )}
+                        {formatDate(comment.createdAt)}
+                      </Typography>
                     </Box>
-                    <Typography sx={{ whiteSpace: "pre-wrap" }}>
-                      {comment.content}
-                    </Typography>
-                  </Card>
-                ))}
-              </Stack>
+
+                    {user && comment.authorId === user.uid && (
+                      <IconButton
+                        size="sm"
+                        variant="plain"
+                        color="neutral"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        🗑️
+                      </IconButton>
+                    )}
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {comment.content}
+                  </Typography>
+                </Box>
+              ))
             ) : (
-              <Typography
-                level="body1"
-                sx={{ textAlign: "center", my: 4, color: "text.tertiary" }}
-              >
+              <Typography sx={{ mb: 2, color: "text.secondary" }}>
                 아직 댓글이 없습니다. 첫 댓글을 작성해보세요!
               </Typography>
             )}
 
             {user ? (
-              <form onSubmit={(e) => e.preventDefault()}>
-                <FormControl sx={{ mb: 2 }}>
-                  <Textarea
-                    placeholder="댓글을 입력하세요"
-                    minRows={3}
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    endDecorator={
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          pt: 1,
-                        }}
-                      >
-                        <Button
-                          onClick={handleAddComment}
-                          loading={isSubmittingComment}
-                          startDecorator="📤"
-                        >
-                          등록
-                        </Button>
-                      </Box>
-                    }
-                  />
-                </FormControl>
-              </form>
-            ) : (
               <Box
-                sx={{
-                  p: 2,
-                  textAlign: "center",
-                  border: "1px dashed",
-                  borderColor: "divider",
-                  borderRadius: "sm",
+                component="form"
+                onSubmit={(e: React.FormEvent) => {
+                  e.preventDefault();
+                  handleAddComment();
                 }}
               >
-                <Typography level="body1" sx={{ mb: 1 }}>
-                  댓글을 작성하려면 로그인이 필요합니다.
-                </Typography>
+                <FormControl sx={{ mb: 1 }}>
+                  <FormLabel>댓글 작성</FormLabel>
+                  <Textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    minRows={2}
+                    placeholder="댓글을 입력하세요"
+                    sx={{ mb: 1 }}
+                  />
+                </FormControl>
                 <Button
-                  component={Link}
-                  to="/login"
-                  size="sm"
-                  variant="outlined"
+                  type="submit"
+                  disabled={!commentText.trim() || isSubmittingComment}
+                  loading={isSubmittingComment}
+                  sx={{ float: "right" }}
                 >
-                  로그인하기
+                  댓글 등록
                 </Button>
               </Box>
+            ) : (
+              <Typography sx={{ color: "text.secondary" }}>
+                댓글을 작성하려면 로그인이 필요합니다.
+              </Typography>
             )}
           </CardContent>
         </Card>

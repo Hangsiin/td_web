@@ -65,10 +65,16 @@ export const Component = function EditPost(): JSX.Element {
 
         // Load post
         const postData = await boardService.getPostById(id);
+        if (!postData) {
+          setError("게시글을 찾을 수 없습니다.");
+          setIsLoading(false);
+          return;
+        }
+
         setPost(postData);
         setTitle(postData.title);
         setContent(postData.content);
-        setCategory(postData.category);
+        setCategory(postData.category || "");
 
         // Check if user is the author
         if (user && postData.authorId !== user.uid) {
