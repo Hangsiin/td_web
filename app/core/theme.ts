@@ -3,6 +3,10 @@
 
 import { extendTheme, ThemeProvider as Provider } from "@mui/joy/styles";
 import { createElement, ReactNode } from "react";
+import {
+  createTheme,
+  ThemeProvider as MuiThemeProvider,
+} from "@mui/material/styles";
 
 /**
  * Customized Joy UI theme.
@@ -18,8 +22,27 @@ export const theme = extendTheme({
   components: {},
 });
 
+/**
+ * Material UI theme for compatibility with Material UI components
+ */
+export const materialTheme = createTheme({
+  components: {
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          // Custom styles for Avatar if needed
+        },
+      },
+    },
+  },
+});
+
 export function ThemeProvider(props: ThemeProviderProps): JSX.Element {
-  return createElement(Provider, { theme, ...props });
+  return createElement(
+    MuiThemeProvider,
+    { theme: materialTheme },
+    createElement(Provider, { theme, ...props }),
+  );
 }
 
 export type ThemeProviderProps = {

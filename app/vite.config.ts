@@ -10,11 +10,11 @@ const publicEnvVars = [
   "APP_ENV",
   "APP_NAME",
   "APP_ORIGIN",
-  "GOOGLE_CLOUD_PROJECT",
-  "FIREBASE_APP_ID",
-  "FIREBASE_API_KEY",
-  "FIREBASE_AUTH_DOMAIN",
-  "GA_MEASUREMENT_ID",
+  "VITE_GOOGLE_CLOUD_PROJECT",
+  "VITE_FIREBASE_APP_ID",
+  "VITE_FIREBASE_API_KEY",
+  "VITE_FIREBASE_AUTH_DOMAIN",
+  "VITE_GA_MEASUREMENT_ID",
 ];
 
 /**
@@ -27,7 +27,8 @@ export default defineProject(async ({ mode }) => {
 
   publicEnvVars.forEach((key) => {
     if (!env[key]) throw new Error(`Missing environment variable: ${key}`);
-    process.env[`VITE_${key}`] = env[key];
+    // VITE_ 접두사가 이미 있으므로 추가로 붙이지 않음
+    process.env[key] = env[key];
   });
 
   return {

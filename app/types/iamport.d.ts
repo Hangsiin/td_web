@@ -50,7 +50,7 @@ interface IamportInstance {
   init: (accountID: string) => void;
   request_pay: (
     params: IamportRequestParams,
-    callback?: (response: IamportResponse) => void
+    callback?: (response: IamportResponse) => void,
   ) => void;
   certification: (params: any, callback?: (response: any) => void) => void;
 }
