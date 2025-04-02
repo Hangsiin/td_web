@@ -3,16 +3,16 @@
 
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { 
-  Box, 
-  Button, 
-  Container, 
-  Typography, 
-  Paper, 
-  CircularProgress, 
+import {
+  Box,
+  Button,
+  Container,
+  Typography,
+  Paper,
+  CircularProgress,
   Alert,
   Divider,
-  CheckCircleOutlineIcon
+  CheckCircleOutlineIcon,
 } from "@mui/material";
 import { verifyPayment } from "../../core/payment";
 
@@ -34,7 +34,10 @@ function PaymentCompletePage() {
 
     // 둘 중 하나라도 있으면 결제 검증 진행
     if ((impUid && merchantUid) || (stateImpUid && stateMerchantUid)) {
-      verifyPaymentStatus(impUid || stateImpUid, merchantUid || stateMerchantUid);
+      verifyPaymentStatus(
+        impUid || stateImpUid,
+        merchantUid || stateMerchantUid,
+      );
     } else {
       setVerifyStatus("error");
     }
@@ -43,13 +46,13 @@ function PaymentCompletePage() {
   const verifyPaymentStatus = async (impUid, merchantUid) => {
     try {
       const result = await verifyPayment(impUid, merchantUid);
-      
+
       if (result.success) {
         setVerifyStatus("success");
         setPaymentInfo({
           impUid,
           merchantUid,
-          ...result
+          ...result,
         });
       } else {
         setVerifyStatus("failed");
@@ -64,7 +67,14 @@ function PaymentCompletePage() {
     switch (verifyStatus) {
       case "verifying":
         return (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              py: 4,
+            }}
+          >
             <CircularProgress size={48} sx={{ mb: 2 }} />
             <Typography variant="h6">결제 정보를 확인 중입니다...</Typography>
           </Box>
@@ -87,9 +97,7 @@ function PaymentCompletePage() {
                 <Typography variant="body1">
                   결제번호: {paymentInfo.impUid}
                 </Typography>
-                <Typography variant="body1">
-                  결제 상태: 결제 완료
-                </Typography>
+                <Typography variant="body1">결제 상태: 결제 완료</Typography>
                 <Divider sx={{ my: 2 }} />
               </Box>
             )}
@@ -121,14 +129,14 @@ function PaymentCompletePage() {
       <Typography variant="h4" component="h1" gutterBottom>
         결제 완료
       </Typography>
-      
+
       <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
         {renderContent()}
-        
+
         <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
-          <Button 
-            variant="contained" 
-            color="primary" 
+          <Button
+            variant="contained"
+            color="primary"
             onClick={() => navigate("/")}
           >
             홈으로 돌아가기

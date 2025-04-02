@@ -3,17 +3,17 @@
 
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Box, 
-  Button, 
-  Container, 
-  Typography, 
-  Paper, 
-  TextField, 
-  CircularProgress, 
+import {
+  Box,
+  Button,
+  Container,
+  Typography,
+  Paper,
+  TextField,
+  CircularProgress,
   Alert,
   createTheme,
-  ThemeProvider
+  ThemeProvider,
 } from "@mui/material";
 import { preparePayment, requestPayment, verifyPayment } from "../core/payment";
 import PaymentModal from "../components/PaymentModal";
@@ -36,16 +36,16 @@ interface PaymentInfo {
 
 function PaymentPage() {
   const navigate = useNavigate();
-  
+
   // 컴포넌트가 마운트되면 간편 결제 페이지로 리디렉션
   useEffect(() => {
-    navigate('/simple-payment', { replace: true });
+    navigate("/simple-payment", { replace: true });
   }, [navigate]);
-  
+
   // 리디렉션 전에 표시할 로딩 화면
   return (
     <ThemeProvider theme={defaultTheme}>
-      <Container maxWidth="md" sx={{ py: 4, textAlign: 'center' }}>
+      <Container maxWidth="md" sx={{ py: 4, textAlign: "center" }}>
         <Typography variant="h4" component="h1" gutterBottom>
           결제 페이지로 이동 중...
         </Typography>
